@@ -43,6 +43,7 @@
     <Compile Include="HtmlDocument.cs" />
     <Compile Include="CharExtensions.cs" />
     <Compile Include="HtmlElement.cs" />
+    <Compile Include="HtmlElementCollection.cs" />
     <Compile Include="HtmlElementFactory.cs" />
     <Compile Include="HtmlTagType.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

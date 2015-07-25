@@ -7,13 +7,11 @@ using chExt = SmartHtml.CharExtensions;
 
 namespace SmartHtml
 {
-    // <span>Lorem ipsum.<span>
-
     public class HtmlDocument
     {
         private int _i = 0;
 
-        private string _html;
+        private readonly string _html;
 
         private readonly Stack<string> _tagNameStack = new Stack<string>();
 
@@ -21,7 +19,7 @@ namespace SmartHtml
         {
             _html = html;
 
-            Elements = new List<HtmlElement>();
+            Elements = new HtmlElementCollection();
 
             AdvanceWhile(c => c.IsWhiteSpace());
 
@@ -43,16 +41,28 @@ namespace SmartHtml
             get { return _html[_i]; }
         }
 
+        private char? NextChar
+        {
+            get
+            {
+                if (_i + 1 < _html.Length)
+                {
+                    return _html[_i + 1];
+                }
+                return null;
+            }
+        }
         private bool IsEndOfHtml
         {
             get { return _i >= _html.Length; }
         }
 
-        public List<HtmlElement> Elements { get; set; }
+        public HtmlElementCollection Elements { get; set; }
 
         public static HtmlDocument Parse(string html)
         {
-            return new HtmlDocument(html);
+            var htmlDocument = new HtmlDocument(html);
+            return htmlDocument;
         }
 
         private HtmlElement ParseElement()
@@ -69,7 +79,7 @@ namespace SmartHtml
             var name = AdvanceWhile(c => c.IsTagNameChar());
 
             _tagNameStack.Push(name);
-            var element = new HtmlElement() { Name = name };// HtmlElementFactory.CreatElement(name);
+            var element = new HtmlElement() { Name = name };
 
             AdvanceWhile(c => c.IsWhiteSpace());
 
@@ -80,25 +90,33 @@ namespace SmartHtml
 
             #endregion
 
-            var text = AdvanceUntil(c => c.IsOpeningAngleBracket());
-            //AdvanceOne(c => c.IsOpeningAngleBracket());
-
-            var isClosingTag = CurrentChar.IsSlash();
-            if (isClosingTag)
+            while (!IsEndOfHtml)
             {
-                AdvanceOne(c => c.IsSlash());
-                var closingTagName = AdvanceWhile(c => c.IsTagNameChar());
-                var isValidClosingTag = _tagNameStack.Peek() == closingTagName;
-                if (!isValidClosingTag)
+                var text = AdvanceUntil(c => c.IsOpeningAngleBracket());
+                if (!string.IsNullOrEmpty(text))
                 {
-                    throw new Exception("Invalid tag nesting/closing.");
+                    element.Elements.Add(text);
                 }
-                _tagNameStack.Pop();
-                AdvanceOne(c => c.IsClosingAngleBracket());
-            }
-            else // Nested element.
-            {
 
+                var isClosingTag = NextChar.HasValue && NextChar.Value.IsSlash();
+                if (isClosingTag)
+                {
+                    AdvanceOne(c => c.IsOpeningAngleBracket());
+                    AdvanceOne(c => c.IsSlash());
+                    var closingTagName = AdvanceWhile(c => c.IsTagNameChar());
+                    var isValidClosingTag = _tagNameStack.Peek() == closingTagName;
+                    if (!isValidClosingTag)
+                    {
+                        throw new Exception("Invalid tag nesting/closing.");
+                    }
+                    _tagNameStack.Pop();
+                    AdvanceOne(c => c.IsClosingAngleBracket());
+                    break;
+                }
+
+                // Nested element.
+                var nestedElement = ParseElement();
+                element.Elements.Add(nestedElement);
             }
 
             return element;
@@ -157,6 +175,14 @@ namespace SmartHtml
             return attributes;
         }
 
+        public override string ToString()
+        {
+            var html = Elements.Select(e => e.ToString()).Aggregate((current, next) => current + next.ToString());
+            return html;
+        }
+
+        #region Utilities
+
         private string AdvanceWhile(Func<char, bool> predicate)
         {
             return _html.AdvanceWhile(predicate, ref _i);
@@ -172,6 +198,7 @@ namespace SmartHtml
             return _html.AdvanceOne(predicate, ref _i);
         }
 
+        #endregion
     }
-    
+
 }

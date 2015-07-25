@@ -8,21 +8,32 @@ namespace SmartHtml
 {
     public class HtmlElement
     {
+        private static readonly HashSet<string> VoidElementNames = new HashSet<string>()
+        {
+            "area", "base", "br", "col", "command", "embed", "hr", "img", "input",
+            "keygen", "link", "meta", "param", "source", "track", "wbr"
+        };
+
         public HtmlElement()
         {
             Attributes = new List<HtmlAttribute>();
-            Elements = new List<object>();
+            Elements = new HtmlElementCollection();
         }
 
         public string Name { get; set; }
 
         public List<HtmlAttribute> Attributes { get; set; }
 
-        public List<object> Elements { get; set; }
+        public HtmlElementCollection Elements { get; set; }
 
         public override string ToString()
         {
-            return base.ToString();
+            var innerHtml = Elements.Select(e => e.ToString()).Aggregate(string.Empty, (current, next) => current + next.ToString());
+            var html = new StringBuilder()
+                .Append("<" + Name + ">")
+                .Append(innerHtml)
+                .Append(VoidElementNames.Contains(Name) ? string.Empty : "</" + Name + ">");
+            return html.ToString();
         }
     }
 }

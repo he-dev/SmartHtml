@@ -12,6 +12,8 @@ namespace SmartHtml
         private static readonly HashSet<uint> LowerCaseChars = new HashSet<uint>(Enumerable.Repeat(97, 122 - 97).Select((i, x) => (uint)(x + i)));
         private static readonly HashSet<uint> Numbers = new HashSet<uint>(Enumerable.Repeat(48, 10).Select((i, x) => (uint)(x + i)));
 
+        private static readonly HashSet<uint> SpecialNameChars = new HashSet<uint>() { '-', '_' };
+
         private static readonly HashSet<uint> TagNameChars = new HashSet<uint>(UpperCaseChars.Concat(LowerCaseChars.Concat(Numbers)));
         private static readonly HashSet<uint> AttributeNameChars = new HashSet<uint>(UpperCaseChars.Concat(LowerCaseChars.Concat(Numbers)));
 
@@ -19,7 +21,7 @@ namespace SmartHtml
 
         public static bool IsLetter(this char value)
         {
-            return UpperCaseChars.Contains(value) || LowerCaseChars.Contains(value);
+            return char.IsLetter(value); // UpperCaseChars.Contains(value) || LowerCaseChars.Contains(value);
         }
 
         public static bool IsOpeningAngleBracket(this char value)
@@ -69,22 +71,19 @@ namespace SmartHtml
 
         public static bool IsAttributeNameChar(this char value)
         {
-            return AttributeNameChars.Contains(value);
+            //return AttributeNameChars.Contains(value);
+            return char.IsLetterOrDigit(value) || SpecialNameChars.Contains(value);
         }
 
         public static bool IsTagNameChar(this char value)
         {
-            return AttributeNameChars.Contains(value);
+            //return AttributeNameChars.Contains(value);
+            return char.IsLetterOrDigit(value) || SpecialNameChars.Contains(value);
         }
 
         public static bool IsUnquotedValueChar(this char value)
         {
             return !char.IsWhiteSpace(value) && !ForbiddenUnquotedValueChars.Contains(value);
-        }
-
-        public static bool Or(this char value, params Func<char, bool>[] predicateFuncs)
-        {
-            return predicateFuncs.Any(func => func(value));
         }
     }
 }
