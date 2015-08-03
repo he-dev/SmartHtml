@@ -9,6 +9,8 @@ namespace SmartHtml
 {
     public class HtmlParser
     {
+        private int _line = 1;
+        private int _column = 1;
         private int _i = 0;
         private readonly string _html;
         private readonly HtmlElementCollection _elements = new HtmlElementCollection();
@@ -63,7 +65,6 @@ namespace SmartHtml
         {
             AdvanceWhile(c => c.IsWhiteSpace());
 
-            //for (; _i < _html.Length; _i++)
             while (!IsEndOfHtml)
             {
                 var htmlElement = ParseTag();
@@ -77,81 +78,87 @@ namespace SmartHtml
         private HtmlElement ParseTag()
         {
             AdvanceOne(c => c.IsOpeningAngleBracket());
+
             var isClosingTag = CurrentChar.IsSlash();
-            if (isClosingTag)
+            return
+                isClosingTag
+                ? ParseClosingTag()
+                : ParseOpeningTag();
+        }
+
+        private HtmlElement ParseOpeningTag()
+        {
+            var tagName = AdvanceWhile(c => c.IsTagNameChar());
+            if (string.IsNullOrEmpty(tagName))
             {
-                AdvanceOne(c => c.IsSlash());
-                var closingTagName = AdvanceWhile(c => c.IsTagNameChar());
-
-                var htmlElement = _openHtmlElementStack.Peek();
-                var isValidClosingTag = htmlElement.Name == closingTagName;
-                if (!isValidClosingTag)
-                {
-                    throw new Exception("Invalid tag nesting/closing.");
-                }
-                _openHtmlElementStack.Pop();
-                AdvanceOne(c => c.IsClosingAngleBracket());
-
-                var text = AdvanceUntil(c => c.IsOpeningAngleBracket());
-                if (!string.IsNullOrEmpty(text))
-                {
-                    htmlElement = _openHtmlElementStack.Peek();
-                    htmlElement.Elements.Add(text);
-                }
-
-                return
-                    _openHtmlElementStack.Count == 0
-                    ? htmlElement
-                    : null;
-            }
-            else // Opening tag
-            {
-                var tagName = AdvanceWhile(c => c.IsTagNameChar());
-                if (string.IsNullOrEmpty(tagName))
-                {
-                    throw new Exception("Invalid charachter at " + (_i + 1) + ".");
-                }
-
-                var htmlElement = new HtmlElement(tagName);
-                var parentHtmlElement = _openHtmlElementStack.Count > 0 ? _openHtmlElementStack.Peek() : null;
-                if (parentHtmlElement != null)
-                {
-                    parentHtmlElement.Elements.Add(htmlElement);
-                }
-                if (!htmlElement.IsVoid)
-                {
-                    _openHtmlElementStack.Push(htmlElement);
-                }
-
-                htmlElement.Attributes = ParseAttributes();
-
-                var text = AdvanceUntil(c => c.IsClosingAngleBracket());
-                if (!string.IsNullOrWhiteSpace(text))
-                {
-                    // Check for invalid self closed void elements.
-                    text = text.Trim();
-                    var isSelfClosed = htmlElement.IsVoid && text.Length == 1 && text.Single().IsSlash();
-                    if (!isSelfClosed)
-                    {
-                        throw new Exception("Malformed html. Invalid chars between tagName/attributes and closing angle bracket.");
-                    }
-                }
-                AdvanceOne(c => c.IsClosingAngleBracket());
-
-                text = AdvanceUntil(c => c.IsOpeningAngleBracket());
-                if (!string.IsNullOrEmpty(text))
-                {
-                    htmlElement.Elements.Add(text);
-                }
-
-                if (htmlElement.IsVoid)
-                {
-                    return null;
-                }
+                throw new Exception("Invalid charachter at " + (_i + 1) + ".");
             }
 
+            var htmlElement = new HtmlElement(tagName);
+            var parentHtmlElement = _openHtmlElementStack.Count > 0 ? _openHtmlElementStack.Peek() : null;
+            if (parentHtmlElement != null)
+            {
+                parentHtmlElement.Elements.Add(htmlElement);
+            }
+            if (!htmlElement.IsVoid)
+            {
+                _openHtmlElementStack.Push(htmlElement);
+            }
+
+            htmlElement.Attributes = ParseAttributes();
+
+            var text = AdvanceUntil(c => c.IsClosingAngleBracket());
+            if (!string.IsNullOrWhiteSpace(text))
+            {
+                // Check for invalid self closed void elements.
+                text = text.Trim();
+                var isSelfClosed = htmlElement.IsVoid && text.Length == 1 && text.Single().IsSlash();
+                if (!isSelfClosed)
+                {
+                    throw new Exception("Malformed html. Invalid chars between tagName/attributes and closing angle bracket.");
+                }
+            }
+            AdvanceOne(c => c.IsClosingAngleBracket());
+
+            text = AdvanceUntil(c => c.IsOpeningAngleBracket());
+            if (!string.IsNullOrEmpty(text))
+            {
+                htmlElement.Elements.Add(text);
+            }
+
+            if (htmlElement.IsVoid)
+            {
+                return null;
+            }
 
             return null;
+        }
+
+        private HtmlElement ParseClosingTag()
+        {
+            AdvanceOne(c => c.IsSlash());
+            var closingTagName = AdvanceWhile(c => c.IsTagNameChar());
+
+            var htmlElement = _openHtmlElementStack.Peek();
+            var isValidClosingTag = htmlElement.Name == closingTagName;
+            if (!isValidClosingTag)
+            {
+                throw new MissingClosingTagException(_html, _i, htmlElement.Name);
+            }
+            _openHtmlElementStack.Pop();
+            AdvanceOne(c => c.IsClosingAngleBracket());
+
+            var text = AdvanceUntil(c => c.IsOpeningAngleBracket());
+            if (!string.IsNullOrEmpty(text))
+            {
+                htmlElement = _openHtmlElementStack.Peek();
+                htmlElement.Elements.Add(text);
+            }
+
+            return
+                _openHtmlElementStack.Count == 0
+                ? htmlElement
+                : null;
         }
 
         private List<HtmlAttribute> ParseAttributes()
@@ -215,7 +222,7 @@ namespace SmartHtml
             return html;
         }
 
-        #region Utilities
+        #region Helpers
 
         private string AdvanceWhile(Func<char, bool> predicate)
         {

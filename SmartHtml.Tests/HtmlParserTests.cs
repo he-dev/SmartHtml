@@ -83,7 +83,7 @@ namespace SmartHtml.Tests
         }
 
         [TestMethod]
-        [ExpectedException(typeof(Exception))]
+        [ExpectedException(typeof(MissingClosingTagException))]
         public void Parse_NotClosedSpan()
         {
             var html = "<p>Lorem<br>ipsum <span>dolor.</p>";
@@ -92,7 +92,7 @@ namespace SmartHtml.Tests
         }
 
         [TestMethod]
-        [ExpectedException(typeof(Exception))]
+        [ExpectedException(typeof(InvalidCharacterException))]
         public void Parse_DoubbleOpeningAngleBracket()
         {
             var html = "<p>Lorem<<br>ipsum <span>dolor.</p>";

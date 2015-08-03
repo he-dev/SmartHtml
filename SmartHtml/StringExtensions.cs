@@ -45,5 +45,15 @@ namespace SmartHtml
             return value.Extract(startIndex, endIndex);
         }
 
+        public static string Advance(this string value, Func<char, bool> predicate, ref int i)
+        {
+            var startIndex = i;
+            var endIndex = i;
+            for (; i < value.Length && predicate(value[i]); i++) ;
+            endIndex = i;
+
+            return value.Extract(startIndex, endIndex);
+        }
+
     }
 }
