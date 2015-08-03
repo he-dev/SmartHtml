@@ -4,4 +4,5 @@
 
 You won't find SmartHtml on NuGet yet but it does not use any external libraries so it can be easily compiled.
 
-**Know Issues** It might run into an endless loop in some cases.
+**Know Issues**
+- It might run into an endless loop in some cases.
