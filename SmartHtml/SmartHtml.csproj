@@ -40,6 +40,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="HtmlAttribute.cs" />
+    <Compile Include="HtmlParser.cs" />
     <Compile Include="HtmlDocument.cs" />
     <Compile Include="CharExtensions.cs" />
     <Compile Include="HtmlElement.cs" />
