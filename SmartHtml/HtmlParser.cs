@@ -63,7 +63,7 @@ namespace SmartHtml
 
         private void Parse()
         {
-            AdvanceWhile(c => c.IsWhiteSpace());
+            //AdvanceWhile(c => c.IsWhiteSpace());
 
             while (!IsEndOfHtml)
             {
@@ -88,49 +88,66 @@ namespace SmartHtml
 
         private HtmlElement ParseOpeningTag()
         {
+            // Read tag name.
             var tagName = AdvanceWhile(c => c.IsTagNameChar());
             if (string.IsNullOrEmpty(tagName))
             {
-                throw new Exception("Invalid charachter at " + (_i + 1) + ".");
+                throw new InvalidCharacterException(_html, _i);
             }
 
-            var htmlElement = new HtmlElement(tagName);
-            var parentHtmlElement = _openHtmlElementStack.Count > 0 ? _openHtmlElementStack.Peek() : null;
-            if (parentHtmlElement != null)
-            {
-                parentHtmlElement.Elements.Add(htmlElement);
-            }
-            if (!htmlElement.IsVoid)
-            {
-                _openHtmlElementStack.Push(htmlElement);
-            }
+            var attributes = ParseAttributes();
+            var htmlElement = new HtmlElement(tagName) { Attributes = attributes };
 
-            htmlElement.Attributes = ParseAttributes();
-
+            // Get everything what is left after parsing attributes until '>'
             var text = AdvanceUntil(c => c.IsClosingAngleBracket());
+
+            // Ooops, we've found something that is not a whitespace.
             if (!string.IsNullOrWhiteSpace(text))
             {
-                // Check for invalid self closed void elements.
                 text = text.Trim();
-                var isSelfClosed = htmlElement.IsVoid && text.Length == 1 && text.Single().IsSlash();
-                if (!isSelfClosed)
+
+                // Is this the "optional" closing '/' on an element that has no closing tag?
+                var isClosingSlash = !htmlElement.HasClosingTag && text.Length == 1 && text.Single().IsSlash();
+                if (!isClosingSlash)
                 {
-                    throw new Exception("Malformed html. Invalid chars between tagName/attributes and closing angle bracket.");
+                    // Unfortunately it's not...
+                    throw new InvalidCharacterException(_html, _i);
                 }
             }
+
+            // Advance to the end of tag '>'
             AdvanceOne(c => c.IsClosingAngleBracket());
 
+            // Advance to the next opening '<'
             text = AdvanceUntil(c => c.IsOpeningAngleBracket());
+
+            // We've found more text.
             if (!string.IsNullOrEmpty(text))
             {
                 htmlElement.Elements.Add(text);
             }
 
-            if (htmlElement.IsVoid)
+            // Decide what we should do with this tag.
+
+            // Add itself to parent.
+            var isChildElement = _openHtmlElementStack.Count > 0;
+            if (isChildElement)
             {
-                return null;
+                _openHtmlElementStack.Peek().Elements.Add(htmlElement);
             }
 
+            // We need to look for the closing tag.
+            if (htmlElement.HasClosingTag)
+            {
+                _openHtmlElementStack.Push(htmlElement);
+            }
+
+            // We're done with this tag if it's not a child and we don't have to look for the closing tag.
+            if (!isChildElement && !htmlElement.HasClosingTag)
+            {
+                return htmlElement;
+            }
+            
             return null;
         }
 

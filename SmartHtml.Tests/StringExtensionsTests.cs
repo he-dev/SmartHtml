@@ -12,7 +12,7 @@ namespace SmartHtml.Tests
         }
 
         [TestMethod]
-        public void AdvanceWhile_WhitespaceTest()
+        public void AdvanceWhile_Whitespace()
         {
             var i = 0;
             var value = "   <";

@@ -25,9 +25,9 @@ namespace SmartHtml
             Name = tagName;
         }
 
-        public bool IsVoid
+        public bool HasClosingTag
         {
-            get { return VoidElementNames.Contains(Name); }
+            get { return !VoidElementNames.Contains(Name); }
         }
 
         public string Name { get; set; }

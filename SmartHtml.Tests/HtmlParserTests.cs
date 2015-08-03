@@ -83,6 +83,14 @@ namespace SmartHtml.Tests
         }
 
         [TestMethod]
+        public void Parse_BrBeforeSpan()
+        {
+            var html = "<br><span>Lorem ipsum dolor.</span>";
+            var htmlDocument = HtmlParser.Parse(html);
+            Assert.AreEqual(html, htmlDocument.ToString());
+        }
+
+        [TestMethod]
         [ExpectedException(typeof(MissingClosingTagException))]
         public void Parse_NotClosedSpan()
         {
