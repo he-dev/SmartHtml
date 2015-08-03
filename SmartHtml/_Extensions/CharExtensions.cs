@@ -21,7 +21,7 @@ namespace SmartHtml
 
         public static bool IsLetter(this char value)
         {
-            return char.IsLetter(value); // UpperCaseChars.Contains(value) || LowerCaseChars.Contains(value);
+            return char.IsLetter(value);
         }
 
         public static bool IsOpeningAngleBracket(this char value)

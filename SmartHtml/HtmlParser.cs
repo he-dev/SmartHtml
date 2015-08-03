@@ -9,8 +9,6 @@ namespace SmartHtml
 {
     public class HtmlParser
     {
-        private int _line = 1;
-        private int _column = 1;
         private int _i = 0;
         private readonly string _html;
         private readonly HtmlElementCollection _elements = new HtmlElementCollection();
@@ -67,26 +65,19 @@ namespace SmartHtml
 
             while (!IsEndOfHtml)
             {
-                var htmlElement = ParseTag();
-                if (htmlElement != null)
-                {
-                    _elements.Add(htmlElement);
-                }
+                ParseTag();
             }
         }
 
-        private HtmlElement ParseTag()
+        private void ParseTag()
         {
             AdvanceOne(c => c.IsOpeningAngleBracket());
 
             var isClosingTag = CurrentChar.IsSlash();
-            return
-                isClosingTag
-                ? ParseClosingTag()
-                : ParseOpeningTag();
+            if (isClosingTag) ParseClosingTag(); else ParseOpeningTag();
         }
 
-        private HtmlElement ParseOpeningTag()
+        private void ParseOpeningTag()
         {
             // Read tag name.
             var tagName = AdvanceWhile(c => c.IsTagNameChar());
@@ -145,13 +136,11 @@ namespace SmartHtml
             // We're done with this tag if it's not a child and we don't have to look for the closing tag.
             if (!isChildElement && !htmlElement.HasClosingTag)
             {
-                return htmlElement;
+                _elements.Add(htmlElement);
             }
-            
-            return null;
         }
 
-        private HtmlElement ParseClosingTag()
+        private void ParseClosingTag()
         {
             AdvanceOne(c => c.IsSlash());
             var closingTagName = AdvanceWhile(c => c.IsTagNameChar());
@@ -168,14 +157,19 @@ namespace SmartHtml
             var text = AdvanceUntil(c => c.IsOpeningAngleBracket());
             if (!string.IsNullOrEmpty(text))
             {
-                htmlElement = _openHtmlElementStack.Peek();
-                htmlElement.Elements.Add(text);
+                if (_openHtmlElementStack.Count > 0)
+                {
+                    htmlElement = _openHtmlElementStack.Peek();
+                    htmlElement.Elements.Add(text);
+                }
+                else
+                {
+                    _elements.Add(text);
+                }
             }
 
-            return
-                _openHtmlElementStack.Count == 0
-                ? htmlElement
-                : null;
+            var isRoot = _openHtmlElementStack.Count == 0;
+            if (isRoot) _elements.Add(htmlElement);
         }
 
         private List<HtmlAttribute> ParseAttributes()

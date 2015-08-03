@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using chExt = SmartHtml.CharExtensions;
 
 namespace SmartHtml
 {
@@ -16,7 +15,5 @@ namespace SmartHtml
             var html = Elements.Select(e => e.ToString()).Aggregate((current, next) => current + next.ToString());
             return html;
         }
-
     }
-
 }

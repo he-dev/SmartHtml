@@ -15,7 +15,6 @@ namespace SmartHtml.Tests
 
             Assert.IsNotNull(htmlDocument);
             Assert.AreEqual(1, htmlDocument.Elements.Count);
-            Assert.IsInstanceOfType(htmlDocument.Elements[0], typeof(HtmlElement));
             Assert.AreEqual("span", (htmlDocument.Elements[0] as HtmlElement).Name);
             Assert.AreEqual(html, htmlDocument.ToString());
         }
@@ -91,6 +90,18 @@ namespace SmartHtml.Tests
         }
 
         [TestMethod]
+        public void Parse_MultilineHtml()
+        {
+            var html = @"
+                <p>Lorem <span>ipsum</span> dolor</p>
+                <p>sit met.";
+            var htmlDocument = HtmlParser.Parse(html);
+            Assert.AreEqual(html, htmlDocument.ToString());
+        }
+
+        #region Test invalid HTML
+
+        [TestMethod]
         [ExpectedException(typeof(MissingClosingTagException))]
         public void Parse_NotClosedSpan()
         {
@@ -107,5 +118,7 @@ namespace SmartHtml.Tests
             var htmlDocument = HtmlParser.Parse(html);
             Assert.AreEqual("<p>Lorem<br>ipsum dolor.</p>", htmlDocument.ToString());
         }
+
+        #endregion
     }
 }

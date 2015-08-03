@@ -6,9 +6,8 @@ using System.Threading.Tasks;
 
 namespace SmartHtml
 {
-    public class HtmlException : Exception
+    public abstract class HtmlException : Exception
     {
-
         public HtmlException(string html, int index)
         {
             CalcLineAndColumn(html, index);
