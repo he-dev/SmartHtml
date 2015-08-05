@@ -19,7 +19,7 @@ namespace SmartHtml
         private void CalcLineAndColumn(string html, int index)
         {
             Line = 1;
-            Column = 0;
+            Column = 1;
             for (int i = 0; i < index; i++)
             {
                 Column++;
@@ -29,7 +29,7 @@ namespace SmartHtml
                 if (isCarriageReturn)
                 {
                     Line++;
-                    Column = 0;
+                    Column = 1;
                 }
             }
         }

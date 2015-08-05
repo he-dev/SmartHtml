@@ -1,5 +1,7 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace SmartHtml.Tests
@@ -10,23 +12,12 @@ namespace SmartHtml.Tests
         [TestMethod]
         public void Parse_EmptyElement()
         {
-            var html = "<span></span>";
+            var html = ReadAllText("EmptyElement");
             var htmlDocument = HtmlParser.Parse(html);
 
             Assert.IsNotNull(htmlDocument);
             Assert.AreEqual(1, htmlDocument.Elements.Count);
             Assert.AreEqual("span", (htmlDocument.Elements[0] as HtmlElement).Name);
-            Assert.AreEqual(html, htmlDocument.ToString());
-        }
-
-        [TestMethod]
-        public void Parse_TwoElementsNextToEachOther()
-        {
-            var html = "<span>Lorem</span><span>ipsum.</span>";
-            var htmlDocument = HtmlParser.Parse(html);
-
-            Assert.IsNotNull(htmlDocument);
-            Assert.AreEqual(2, htmlDocument.Elements.Count);
             Assert.AreEqual(html, htmlDocument.ToString());
         }
 
@@ -38,9 +29,22 @@ namespace SmartHtml.Tests
         }
 
         [TestMethod]
+        public void Parse_TwoElementsNextToEachOther()
+        {
+            var html = ReadAllText("TwoElementsNextToEachOther");
+            var htmlDocument = HtmlParser.Parse(html);
+
+            Assert.IsNotNull(htmlDocument);
+            Assert.AreEqual(2, htmlDocument.Elements.Count);
+            Assert.AreEqual(html, htmlDocument.ToString());
+        }
+
+        
+
+        [TestMethod]
         public void Parse_EmptyNestedElements()
         {
-            var html = "<div><span></span></div>";
+            var html = ReadAllText("EmptyNestedElements");
             var htmlDocument = HtmlParser.Parse(html);
             Assert.IsNotNull(htmlDocument);
             Assert.AreEqual(1, htmlDocument.Elements.Count);
@@ -50,7 +54,7 @@ namespace SmartHtml.Tests
         [TestMethod]
         public void Parse_NestedElementsWithText()
         {
-            var html = "<div>Lorem <span>ipsum</span> dolor.</div>";
+            var html = ReadAllText("NestedElementsWithText");
             var htmlDocument = HtmlParser.Parse(html);
             Assert.IsNotNull(htmlDocument);
             Assert.AreEqual(1, htmlDocument.Elements.Count);
@@ -60,31 +64,31 @@ namespace SmartHtml.Tests
         [TestMethod]
         public void Parse_ElementWithAttributes()
         {
-            var html = "<span style=\"color: blue\" checked>Lorem ipsum.</span>";
+            var html = ReadAllText("ElementWithAttributes");
             var htmlDocument = HtmlParser.Parse(html);
-            Assert.AreEqual("<span style=\"color: blue\" checked>Lorem ipsum.</span>", htmlDocument.ToString());
+            Assert.AreEqual("<span id=\"abc\" style=\"color: blue\" class>Lorem ipsum.</span>", htmlDocument.ToString());
         }
 
         [TestMethod]
         public void Parse_ElementWithAttributesAndSpaces()
         {
-            var html = "   <p style  =  \"color: blue\" checked><span>Lorem ipsum</span> dolor.</p>";
+            var html = ReadAllText("ElementWithAttributesAndSpaces");
             var htmlDocument = HtmlParser.Parse(html);
-            Assert.AreEqual("<p style=\"color: blue\" checked><span>Lorem ipsum</span> dolor.</p>", htmlDocument.ToString());
+            Assert.AreEqual("<p style=\"color: blue\" class><span>Lorem ipsum</span> dolor.</p>", htmlDocument.ToString());
         }
 
         [TestMethod]
-        public void Parse_ElementWithBr()
+        public void Parse_VoidElement()
         {
-            var html = "<p>Lorem<br>ipsum dolor.</p>";
+            var html = ReadAllText("VoidElement");
             var htmlDocument = HtmlParser.Parse(html);
-            Assert.AreEqual("<p>Lorem<br>ipsum dolor.</p>", htmlDocument.ToString());
+            Assert.AreEqual(html, htmlDocument.ToString());
         }
 
         [TestMethod]
         public void Parse_BrBeforeSpan()
         {
-            var html = "<br><span>Lorem ipsum dolor.</span>";
+            var html = ReadAllText("VoidElementBeforeOtherElement");
             var htmlDocument = HtmlParser.Parse(html);
             Assert.AreEqual(html, htmlDocument.ToString());
         }
@@ -92,9 +96,7 @@ namespace SmartHtml.Tests
         [TestMethod]
         public void Parse_MultilineHtml()
         {
-            var html = @"
-                <p>Lorem <span>ipsum</span> dolor</p>
-                <p>sit met.";
+            var html = ReadAllText("MultilineHtml1");
             var htmlDocument = HtmlParser.Parse(html);
             Assert.AreEqual(html, htmlDocument.ToString());
         }
@@ -103,22 +105,27 @@ namespace SmartHtml.Tests
 
         [TestMethod]
         [ExpectedException(typeof(MissingClosingTagException))]
-        public void Parse_NotClosedSpan()
+        public void Parse_UnclosedElement()
         {
-            var html = "<p>Lorem<br>ipsum <span>dolor.</p>";
+            var html = ReadAllText("UnclosedElement");
             var htmlDocument = HtmlParser.Parse(html);
-            Assert.AreEqual("<p>Lorem<br>ipsum dolor.</p>", htmlDocument.ToString());
         }
 
         [TestMethod]
         [ExpectedException(typeof(InvalidCharacterException))]
         public void Parse_DoubbleOpeningAngleBracket()
         {
-            var html = "<p>Lorem<<br>ipsum <span>dolor.</p>";
+            var html = ReadAllText("DoubbleOpeningAngleBracket");
             var htmlDocument = HtmlParser.Parse(html);
-            Assert.AreEqual("<p>Lorem<br>ipsum dolor.</p>", htmlDocument.ToString());
         }
 
         #endregion
+
+        private static string ReadAllText(string fileName)
+        {
+            //var asm = Assembly.GetAssembly(typeof(HtmlParserTests));
+            var fullPath = Path.Combine("_Test_Files", fileName + ".txt");
+            return File.ReadAllText(fullPath);
+        }
     }
 }

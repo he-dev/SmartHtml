@@ -9,7 +9,7 @@ namespace SmartHtml
 {
     public class HtmlParser
     {
-        private int _i = 0;
+        private int _index = 0;
         private readonly string _html;
         private readonly HtmlElementCollection _elements = new HtmlElementCollection();
         private readonly Stack<HtmlElement> _openHtmlElementStack = new Stack<HtmlElement>();
@@ -21,21 +21,21 @@ namespace SmartHtml
 
         private char PreviousChar
         {
-            get { return _html[_i - 1]; }
+            get { return _html[_index - 1]; }
         }
 
         private char CurrentChar
         {
-            get { return _html[_i]; }
+            get { return _html[_index]; }
         }
 
         private char? NextChar
         {
             get
             {
-                if (_i + 1 < _html.Length)
+                if (_index + 1 < _html.Length)
                 {
-                    return _html[_i + 1];
+                    return _html[_index + 1];
                 }
                 return null;
             }
@@ -43,12 +43,12 @@ namespace SmartHtml
 
         private bool IsEndOfHtml
         {
-            get { return _i >= _html.Length; }
+            get { return _index >= _html.Length; }
         }
 
         public static HtmlDocument Parse(string html)
         {
-            var htmlParser = new HtmlParser(html.Trim());
+            var htmlParser = new HtmlParser(html);
             htmlParser.Parse();
 
             var htmlDocument = new HtmlDocument()
@@ -61,8 +61,6 @@ namespace SmartHtml
 
         private void Parse()
         {
-            //AdvanceWhile(c => c.IsWhiteSpace());
-
             while (!IsEndOfHtml)
             {
                 ParseTag();
@@ -71,46 +69,60 @@ namespace SmartHtml
 
         private void ParseTag()
         {
-            AdvanceOne(c => c.IsOpeningAngleBracket());
+            var selection = ReadExact(c => c.IsOpeningAngleBracket(), LeadingWhitespace.Ignore);
+
+            var isOpeningTag = CurrentChar.IsLetter();
+            if (isOpeningTag)
+            {
+                ParseOpeningTag();
+                return;
+            }
 
             var isClosingTag = CurrentChar.IsSlash();
-            if (isClosingTag) ParseClosingTag(); else ParseOpeningTag();
+            if (isClosingTag)
+            {
+                ParseClosingTag();
+
+                var openElementExists = _openHtmlElementStack.Count > 0;
+                if (openElementExists)
+                {
+                    var text = ReadUntil(c => c.IsOpeningAngleBracket());
+                    if (!string.IsNullOrEmpty(text))
+                    {
+                        var htmlElement = _openHtmlElementStack.Peek();
+                        htmlElement.Elements.Add(text);
+                    }
+                    else
+                    {
+                        //_elements.Add(text);
+                    }
+                }
+                return;
+            }
+
+            throw new InvalidCharacterException(_html, _index);
         }
 
         private void ParseOpeningTag()
         {
-            // Read tag name.
-            var tagName = AdvanceWhile(c => c.IsTagNameChar());
-            if (string.IsNullOrEmpty(tagName))
+            var openingTagName = ReadWhile(c => c.IsTagNameChar());
+
+            if (string.IsNullOrEmpty(openingTagName))
             {
-                throw new InvalidCharacterException(_html, _i);
+                throw new InvalidCharacterException(_html, _index);
             }
 
-            var attributes = ParseAttributes();
-            var htmlElement = new HtmlElement(tagName) { Attributes = attributes };
+            var htmlElement = new HtmlElement(openingTagName);
 
-            // Get everything what is left after parsing attributes until '>'
-            var text = AdvanceUntil(c => c.IsClosingAngleBracket());
+            var attributes = ReadUntil(c => c.IsClosingAngleBracket(), LeadingWhitespace.Ignore);
+            ParseAttributes(htmlElement, attributes);
 
-            // Ooops, we've found something that is not a whitespace.
-            if (!string.IsNullOrWhiteSpace(text))
-            {
-                text = text.Trim();
-
-                // Is this the "optional" closing '/' on an element that has no closing tag?
-                var isClosingSlash = !htmlElement.HasClosingTag && text.Length == 1 && text.Single().IsSlash();
-                if (!isClosingSlash)
-                {
-                    // Unfortunately it's not...
-                    throw new InvalidCharacterException(_html, _i);
-                }
-            }
-
-            // Advance to the end of tag '>'
-            AdvanceOne(c => c.IsClosingAngleBracket());
+            // Read closing angle bracket and the optional slash.
+            var text = ReadWhile(c => c.IsSlash() || c.IsClosingAngleBracket());
+            var isClosingBracket = text == "/>" || text == ">";
 
             // Advance to the next opening '<'
-            text = AdvanceUntil(c => c.IsOpeningAngleBracket());
+            text = ReadUntil(c => c.IsOpeningAngleBracket());
 
             // We've found more text.
             if (!string.IsNullOrEmpty(text))
@@ -120,16 +132,16 @@ namespace SmartHtml
 
             // Decide what we should do with this tag.
 
-            // Add itself to parent.
             var isChildElement = _openHtmlElementStack.Count > 0;
             if (isChildElement)
             {
+                // Add itself to parent.
                 _openHtmlElementStack.Peek().Elements.Add(htmlElement);
             }
 
-            // We need to look for the closing tag.
             if (htmlElement.HasClosingTag)
             {
+                // We need to look for the closing tag so push to the stack.
                 _openHtmlElementStack.Push(htmlElement);
             }
 
@@ -142,89 +154,61 @@ namespace SmartHtml
 
         private void ParseClosingTag()
         {
-            AdvanceOne(c => c.IsSlash());
-            var closingTagName = AdvanceWhile(c => c.IsTagNameChar());
+            var text = ReadExact(c => c.IsSlash(), LeadingWhitespace.Select);
+            var closingTagName = ReadWhile(c => c.IsTagNameChar());
 
             var htmlElement = _openHtmlElementStack.Peek();
             var isValidClosingTag = htmlElement.Name == closingTagName;
             if (!isValidClosingTag)
             {
-                throw new MissingClosingTagException(_html, _i, htmlElement.Name);
+                throw new MissingClosingTagException(_html, _index, htmlElement.Name);
             }
             _openHtmlElementStack.Pop();
-            AdvanceOne(c => c.IsClosingAngleBracket());
 
-            var text = AdvanceUntil(c => c.IsOpeningAngleBracket());
-            if (!string.IsNullOrEmpty(text))
-            {
-                if (_openHtmlElementStack.Count > 0)
-                {
-                    htmlElement = _openHtmlElementStack.Peek();
-                    htmlElement.Elements.Add(text);
-                }
-                else
-                {
-                    _elements.Add(text);
-                }
-            }
+            text = ReadExact(c => c.IsClosingAngleBracket(), LeadingWhitespace.Ignore);
 
             var isRoot = _openHtmlElementStack.Count == 0;
             if (isRoot) _elements.Add(htmlElement);
         }
 
-        private List<HtmlAttribute> ParseAttributes()
+        private void ParseAttributes(HtmlElement htmlElement, string attributes)
         {
-            var attributes = new List<HtmlAttribute>();
+            // Apparently there are no attributes but just an empty space.
+            if (string.IsNullOrWhiteSpace(attributes)) return;
 
-            AdvanceWhile(c => c.IsWhiteSpace());
-
-            if (CurrentChar.IsClosingAngleBracket())
+            var index = 0;
+            while (index < attributes.Length)
             {
-                return attributes;
-            }
+                // abc
+                var name = attributes.ReadWhile(c => c.IsAttributeNameChar(), ref index, LeadingWhitespace.Ignore);
 
-            while (true)
-            {
-                var name = AdvanceWhile(c => c.IsAttributeNameChar());
-                var value = string.Empty;
+                var attr = new HtmlAttribute() { Name = name };
+                htmlElement.Attributes.Add(attr);
 
-                AdvanceWhile(c => c.IsWhiteSpace());
+                var text = attributes.ReadExact(c => c.IsEqualsSign(), ref index);
 
-                var hasValue = CurrentChar.IsEqualsSign();
+                if (string.IsNullOrEmpty(text)) break;
+
+                #region Parse value
+
+                var hasValue = text[0].IsEqualsSign();
                 if (hasValue)
                 {
-                    AdvanceOne(c => c.IsEqualsSign());
-
-                    var isUnquotedValue = CurrentChar.IsLetter();
-                    if (isUnquotedValue)
+                    var quotationMark = attributes.ReadExact(c => c.IsDoubleQuotationMark() || c.IsSingleQuotationMark(), ref index, LeadingWhitespace.Ignore);
+                    var isQuotedValue = !string.IsNullOrEmpty(quotationMark) && quotationMark.Length == 1;
+                    if (isQuotedValue)
                     {
-                        value = AdvanceWhile(c => c.IsUnquotedValueChar());
+                        attr.Value = attributes.ReadUntil(c => c == quotationMark[0], ref index, LeadingWhitespace.Select);
+                        text = attributes.ReadExact(c => c == quotationMark[0], ref index, LeadingWhitespace.Ignore);
                     }
-                    else // Quoted value.
+                    else
                     {
-                        AdvanceWhile(c => c.IsWhiteSpace());
-                        AdvanceOne(c => c.IsDoubleQuotationMark() || c.IsSingleQuotationMark());
-                        value = AdvanceUntil(c => c.IsDoubleQuotationMark() || c.IsSingleQuotationMark());
-                        AdvanceOne(c => c.IsDoubleQuotationMark() || c.IsSingleQuotationMark());
+                        attr.Value = attributes.ReadWhile(c => c.IsLetter(), ref index, LeadingWhitespace.Ignore);
                     }
                 }
 
-                attributes.Add(new HtmlAttribute()
-                {
-                    Name = name,
-                    Value = value
-                });
-
-                AdvanceWhile(c => c.IsWhiteSpace());
-
-                if (CurrentChar.IsClosingAngleBracket() || IsEndOfHtml)
-                {
-                    //AdvanceOne(c => c.IsClosingAngleBracket());
-                    break;
-                }
+                #endregion
             }
-
-            return attributes;
         }
 
         public override string ToString()
@@ -233,21 +217,21 @@ namespace SmartHtml
             return html;
         }
 
-        #region Helpers
+        #region Helpers        
 
-        private string AdvanceWhile(Func<char, bool> predicate)
+        private string ReadWhile(Func<char, bool> predicate, LeadingWhitespace leadingWhitespace = LeadingWhitespace.Ignore)
         {
-            return _html.AdvanceWhile(predicate, ref _i);
+            return _html.Read(predicate, ref _index, leadingWhitespace);
         }
 
-        private string AdvanceUntil(Func<char, bool> predicate)
+        private string ReadUntil(Func<char, bool> predicate, LeadingWhitespace leadingWhitespace = LeadingWhitespace.Select)
         {
-            return _html.AdvanceUntil(predicate, ref _i);
+            return _html.Read(c => !predicate(c), ref _index, leadingWhitespace);
         }
 
-        private string AdvanceOne(Func<char, bool> predicate)
+        private string ReadExact(Func<char, bool> predicate, LeadingWhitespace leadingWhitespace = LeadingWhitespace.Ignore)
         {
-            return _html.AdvanceOne(predicate, ref _i);
+            return _html.ReadExact(predicate, ref _index, leadingWhitespace);
         }
 
         private bool CheckNext(Func<char, bool> predicate)

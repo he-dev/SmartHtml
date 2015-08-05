@@ -43,6 +43,7 @@
     <Compile Include="HtmlAttribute.cs" />
     <Compile Include="HtmlParser.cs" />
     <Compile Include="HtmlDocument.cs" />
+    <Compile Include="LeadingWhitespace.cs" />
     <Compile Include="_Extensions\CharExtensions.cs" />
     <Compile Include="HtmlElement.cs" />
     <Compile Include="HtmlElementCollection.cs" />
@@ -51,6 +52,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="_Extensions\StringExtensions.cs" />
     <Compile Include="_Exceptions\MissingClosingTagException.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="_TestHtml\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

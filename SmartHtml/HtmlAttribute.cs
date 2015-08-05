@@ -8,6 +8,11 @@ namespace SmartHtml
 {
     public class HtmlAttribute
     {
+        public HtmlAttribute()
+        {
+            Value = string.Empty;
+        }
+
         public string Name { get; set; }
 
         public string Value { get; set; }

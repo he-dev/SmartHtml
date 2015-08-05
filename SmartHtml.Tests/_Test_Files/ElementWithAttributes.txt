@@ -1,0 +1,1 @@
+﻿<span id=abc style="color: blue" class>Lorem ipsum.</span>
