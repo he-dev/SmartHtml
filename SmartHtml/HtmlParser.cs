@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,7 +13,7 @@ namespace SmartHtml
         private int _index = 0;
         private readonly string _html;
         private readonly HtmlElementCollection _elements = new HtmlElementCollection();
-        private readonly Stack<HtmlElement> _openHtmlElementStack = new Stack<HtmlElement>();
+        private readonly Stack<HtmlElement> _openHtmlElements = new Stack<HtmlElement>();
 
         private HtmlParser(string html)
         {
@@ -28,6 +29,10 @@ namespace SmartHtml
         {
             get { return _html[_index]; }
         }
+
+#if DEBUG
+        private string HtmlRead => !IsEndOfHtml ? _html.Substring(0, _index + 1) : null;
+#endif
 
         private char? NextChar
         {
@@ -69,7 +74,10 @@ namespace SmartHtml
 
         private void ParseTag()
         {
-            var selection = ReadExact(c => c.IsOpeningAngleBracket(), LeadingWhitespace.Ignore);
+            var text = ReadUntil(c => c.IsOpeningAngleBracket(), LeadingWhitespace.Select);
+            AddText(text);
+
+            text = ReadExact(c => c.IsOpeningAngleBracket(), LeadingWhitespace.Ignore);
 
             var isOpeningTag = CurrentChar.IsLetter();
             if (isOpeningTag)
@@ -83,20 +91,16 @@ namespace SmartHtml
             {
                 ParseClosingTag();
 
-                var openElementExists = _openHtmlElementStack.Count > 0;
-                if (openElementExists)
-                {
-                    var text = ReadUntil(c => c.IsOpeningAngleBracket());
-                    if (!string.IsNullOrEmpty(text))
-                    {
-                        var htmlElement = _openHtmlElementStack.Peek();
-                        htmlElement.Elements.Add(text);
-                    }
-                    else
-                    {
-                        //_elements.Add(text);
-                    }
-                }
+                //var openElementExists = _openHtmlElements.Count > 0;
+                //if (openElementExists)
+                //{
+                //    text = ReadUntil(c => c.IsOpeningAngleBracket());
+                //    if (!string.IsNullOrEmpty(text))
+                //    {
+                //        var htmlElement = _openHtmlElements.Peek();
+                //        htmlElement.Elements.Add(text);
+                //    }
+                //}
                 return;
             }
 
@@ -132,17 +136,17 @@ namespace SmartHtml
 
             // Decide what we should do with this tag.
 
-            var isChildElement = _openHtmlElementStack.Count > 0;
+            var isChildElement = _openHtmlElements.Count > 0;
             if (isChildElement)
             {
                 // Add itself to parent.
-                _openHtmlElementStack.Peek().Elements.Add(htmlElement);
+                _openHtmlElements.Peek().Elements.Add(htmlElement);
             }
 
             if (htmlElement.HasClosingTag)
             {
                 // We need to look for the closing tag so push to the stack.
-                _openHtmlElementStack.Push(htmlElement);
+                _openHtmlElements.Push(htmlElement);
             }
 
             // We're done with this tag if it's not a child and we don't have to look for the closing tag.
@@ -157,17 +161,25 @@ namespace SmartHtml
             var text = ReadExact(c => c.IsSlash(), LeadingWhitespace.Select);
             var closingTagName = ReadWhile(c => c.IsTagNameChar());
 
-            var htmlElement = _openHtmlElementStack.Peek();
+            // Get last open html element:
+            var htmlElement = _openHtmlElements.Peek();
+
+            // Does the current closing tag name match the last open html element name?
             var isValidClosingTag = htmlElement.Name == closingTagName;
             if (!isValidClosingTag)
             {
                 throw new MissingClosingTagException(_html, _index, htmlElement.Name);
             }
-            _openHtmlElementStack.Pop();
 
-            text = ReadExact(c => c.IsClosingAngleBracket(), LeadingWhitespace.Ignore);
+            // Everythink is fine. Remove the last open element from the stack. It's closed now.
+            _openHtmlElements.Pop();
 
-            var isRoot = _openHtmlElementStack.Count == 0;
+            text = ReadExact(c => c.IsClosingAngleBracket(), LeadingWhitespace.Select);
+
+            // Are there any others open html elements?
+            var isRoot = _openHtmlElements.Count == 0;
+
+            // No? Then this is not a nested html element.
             if (isRoot) _elements.Add(htmlElement);
         }
 
@@ -208,6 +220,21 @@ namespace SmartHtml
                 }
 
                 #endregion
+            }
+        }
+
+        private void AddText(string text)
+        {
+            if (string.IsNullOrEmpty(text)) text = string.Empty;
+
+            var lastHtmlElement = _openHtmlElements.Count > 0 ? _openHtmlElements.Peek() : null;
+            if (lastHtmlElement != null)
+            {
+                lastHtmlElement.Elements.Add(text);
+            }
+            else
+            {
+                _elements.Add(text);
             }
         }
 
