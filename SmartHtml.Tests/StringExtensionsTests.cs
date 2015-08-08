@@ -9,39 +9,73 @@ namespace SmartHtml.Tests
         [TestMethod]
         public void Extract()
         {
+            Assert.AreEqual("cd", "abcd".Extract(2, 4));
         }
 
         [TestMethod]
-        public void AdvanceWhile_Whitespace()
+        public void ReadWhile_LeadingWhitespace_Ignore()
         {
             var i = 0;
             var value = "   <";
-            var result = value.AdvanceWhile(c => c.IsWhiteSpace(), ref i);
+            var result = value.ReadWhile(c => c.IsWhiteSpace(), ref i, LeadingWhitespace.Ignore);
             
+            Assert.AreEqual(3, i);
+            Assert.AreEqual(string.Empty, result);
+        }
+
+        [TestMethod]
+        public void ReadWhile_LeadingWhitespace_Select()
+        {
+            var i = 0;
+            var value = "   <";
+            var result = value.ReadWhile(c => c.IsWhiteSpace(), ref i, LeadingWhitespace.Select);
+
             Assert.AreEqual(3, i);
             Assert.AreEqual("   ", result);
         }
 
         [TestMethod]
-        public void AdvanceUntil_OpeningAngleBracketTest()
+        public void ReadUntil_LeadingWhitespace_Ignore()
         {
             var i = 0;
-            var value = "abc<";
-            var result = value.AdvanceUntil(c => c.IsOpeningAngleBracket(), ref i);
+            var value = "   <p";
+            var result = value.ReadUntil(c => c.IsOpeningAngleBracket(), ref i, LeadingWhitespace.Ignore);
 
             Assert.AreEqual(3, i);
-            Assert.AreEqual("abc", result);
+            Assert.AreEqual(string.Empty, result);
         }
 
         [TestMethod]
-        public void AdvanceOne()
+        public void ReadUntil_LeadingWhitespace_Select()
         {
             var i = 0;
-            var value = "<span>";
-            var result = value.AdvanceOne(c => c.IsOpeningAngleBracket(), ref i);
+            var value = "   <p";
+            var result = value.ReadUntil(c => c.IsOpeningAngleBracket(), ref i, LeadingWhitespace.Select);
 
-            Assert.AreEqual(1, i);
+            Assert.AreEqual(3, i);
+            Assert.AreEqual("   ", result);
+        }
+
+        [TestMethod]
+        public void ReadExact_LeadingWhitespace_Ignore()
+        {
+            var i = 0;
+            var value = "   <p";
+            var result = value.ReadExact(c => c.IsOpeningAngleBracket(), ref i, LeadingWhitespace.Ignore);
+
+            Assert.AreEqual(4, i);
             Assert.AreEqual("<", result);
+        }
+
+        [TestMethod]
+        public void ReadExact_LeadingWhitespace_Select()
+        {
+            var i = 0;
+            var value = "   <p";
+            var result = value.ReadExact(c => c.IsOpeningAngleBracket(), ref i, LeadingWhitespace.Select);
+
+            Assert.AreEqual(0, i);
+            Assert.IsNull(result);
         }
     }
 }

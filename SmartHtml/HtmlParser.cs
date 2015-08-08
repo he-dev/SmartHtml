@@ -89,18 +89,7 @@ namespace SmartHtml
             var isClosingTag = CurrentChar.IsSlash();
             if (isClosingTag)
             {
-                ParseClosingTag();
-
-                //var openElementExists = _openHtmlElements.Count > 0;
-                //if (openElementExists)
-                //{
-                //    text = ReadUntil(c => c.IsOpeningAngleBracket());
-                //    if (!string.IsNullOrEmpty(text))
-                //    {
-                //        var htmlElement = _openHtmlElements.Peek();
-                //        htmlElement.Elements.Add(text);
-                //    }
-                //}
+                ParseClosingTag();         
                 return;
             }
 
@@ -259,15 +248,7 @@ namespace SmartHtml
         private string ReadExact(Func<char, bool> predicate, LeadingWhitespace leadingWhitespace = LeadingWhitespace.Ignore)
         {
             return _html.ReadExact(predicate, ref _index, leadingWhitespace);
-        }
-
-        private bool CheckNext(Func<char, bool> predicate)
-        {
-            return
-                NextChar.HasValue
-                ? predicate(NextChar.Value)
-                : false;
-        }
+        }        
 
         #endregion
     }
