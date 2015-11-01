@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using SmartHtml.Dom;
 
 namespace SmartHtml.Tests
 {
@@ -12,24 +13,33 @@ namespace SmartHtml.Tests
         [TestMethod]
         public void Parse_EmptyElement()
         {
-            var html = ReadAllText("EmptyElement");
-            var htmlDocument = HtmlParser.Parse(html);
+            var html = TestHelper.ReadAllText("EmptyElement");
+            var htmlDoc = HtmlParser.Parse(html);
 
-            Assert.IsNotNull(htmlDocument);
-            Assert.AreEqual(html, htmlDocument.ToString());
+            Assert.IsNotNull(htmlDoc);
+            Assert.AreEqual(1, htmlDoc.WebPage.documentElement.childNodes.Count);
+
+            var span = htmlDoc.WebPage.documentElement.childNodes.OfType<ElementNode>().First();
+            Assert.AreEqual("span", span.nodeName);
         }
 
         [TestMethod]
         public void Parse_ElementWithText()
         {
-            var html = "<span>Lorem ipsum.</span>";
-            var htmlDocument = HtmlParser.Parse(html);
+            var html = TestHelper.ReadAllText("ElementWithText");
+            var htmlDoc = HtmlParser.Parse(html);
+            Assert.IsNotNull(htmlDoc);
+            Assert.AreEqual(1, htmlDoc.WebPage.documentElement.childNodes.Count);
+
+            var span = htmlDoc.WebPage.documentElement.childNodes.OfType<ElementNode>().First();
+            Assert.AreEqual("span", span.nodeName);
+            Assert.AreEqual("Lorem ipsum.", span.childNodes.OfType<TextNode>().First().text);
         }
 
         [TestMethod]
         public void Parse_TwoElementsNextToEachOther()
         {
-            var html = ReadAllText("TwoElementsNextToEachOther");
+            var html = TestHelper.ReadAllText("TwoElementsNextToEachOther");
             var htmlDocument = HtmlParser.Parse(html);
 
             Assert.IsNotNull(htmlDocument);
@@ -48,7 +58,7 @@ namespace SmartHtml.Tests
         [TestMethod]
         public void Parse_NestedElementsWithText()
         {
-            var html = ReadAllText("NestedElementsWithText");
+            var html = TestHelper.ReadAllText("NestedElementsWithText");
             var htmlDocument = HtmlParser.Parse(html);
             Assert.IsNotNull(htmlDocument);
             Assert.AreEqual(html, htmlDocument.ToString());
@@ -57,7 +67,7 @@ namespace SmartHtml.Tests
         [TestMethod]
         public void Parse_ElementWithAttributes()
         {
-            var html = ReadAllText("ElementWithAttributes");
+            var html = TestHelper.ReadAllText("ElementWithAttributes");
             var htmlDocument = HtmlParser.Parse(html);
             Assert.AreEqual("<span id=\"abc\" style=\"color: blue\" class>Lorem ipsum.</span>", htmlDocument.ToString());
         }
@@ -65,7 +75,7 @@ namespace SmartHtml.Tests
         [TestMethod]
         public void Parse_ElementWithAttributesAndSpaces()
         {
-            var html = ReadAllText("ElementWithAttributesAndSpaces");
+            var html = TestHelper.ReadAllText("ElementWithAttributesAndSpaces");
             var htmlDocument = HtmlParser.Parse(html);
             Assert.AreEqual("   <p style=\"color: blue\" class><span>Lorem ipsum</span> dolor.</p>", htmlDocument.ToString());
         }
@@ -73,7 +83,7 @@ namespace SmartHtml.Tests
         [TestMethod]
         public void Parse_VoidElement()
         {
-            var html = ReadAllText("VoidElement");
+            var html = TestHelper.ReadAllText("VoidElement");
             var htmlDocument = HtmlParser.Parse(html);
             Assert.AreEqual(html, htmlDocument.ToString());
         }
@@ -81,7 +91,7 @@ namespace SmartHtml.Tests
         [TestMethod]
         public void Parse_VoidElementBeforeOtherElement()
         {
-            var html = ReadAllText("VoidElementBeforeOtherElement");
+            var html = TestHelper.ReadAllText("VoidElementBeforeOtherElement");
             var htmlDocument = HtmlParser.Parse(html);
             Assert.AreEqual(html, htmlDocument.ToString());
         }
@@ -89,7 +99,7 @@ namespace SmartHtml.Tests
         [TestMethod]
         public void Parse_MultilineHtml()
         {
-            var html = ReadAllText("MultilineHtml1");
+            var html = TestHelper.ReadAllText("MultilineHtml1");
             var htmlDocument = HtmlParser.Parse(html);
             Assert.AreEqual(html, htmlDocument.ToString());
         }
@@ -100,7 +110,7 @@ namespace SmartHtml.Tests
         [ExpectedException(typeof(MissingClosingTagException))]
         public void Parse_UnclosedElement()
         {
-            var html = ReadAllText("UnclosedElement");
+            var html = TestHelper.ReadAllText("UnclosedElement");
             var htmlDocument = HtmlParser.Parse(html);
         }
 
@@ -108,17 +118,12 @@ namespace SmartHtml.Tests
         [ExpectedException(typeof(InvalidCharacterException))]
         public void Parse_DoubbleOpeningAngleBracket()
         {
-            var html = ReadAllText("DoubbleOpeningAngleBracket");
+            var html = TestHelper.ReadAllText("DoubbleOpeningAngleBracket");
             var htmlDocument = HtmlParser.Parse(html);
         }
 
         #endregion
 
-        private static string ReadAllText(string fileName)
-        {
-            //var asm = Assembly.GetAssembly(typeof(HtmlParserTests));
-            var fullPath = Path.Combine("_Test_Files", fileName + ".txt");
-            return File.ReadAllText(fullPath);
-        }
+
     }
 }

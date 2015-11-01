@@ -40,22 +40,34 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="HtmlAttribute.cs" />
-    <Compile Include="HtmlParser.cs" />
-    <Compile Include="HtmlDocument.cs" />
-    <Compile Include="LeadingWhitespace.cs" />
-    <Compile Include="_Extensions\CharExtensions.cs" />
-    <Compile Include="HtmlElement.cs" />
-    <Compile Include="HtmlElementCollection.cs" />
-    <Compile Include="_Exceptions\HtmlException.cs" />
-    <Compile Include="_Exceptions\InvalidCharacterException.cs" />
+    <Compile Include="_Codebase\Dom\AttributeNode.cs" />
+    <Compile Include="_Codebase\Dom\CommentNode.cs" />
+    <Compile Include="_Codebase\Dom\DocumentNode.cs" />
+    <Compile Include="_Codebase\Dom\ElementNode.cs" />
+    <Compile Include="_Codebase\Dom\NodeType.cs" />
+    <Compile Include="_Codebase\Dom\Node.cs" />
+    <Compile Include="_Codebase\Dom\TextNode.cs" />
+    <Compile Include="_Codebase\HtmlAttribute.cs" />
+    <Compile Include="_Codebase\HtmlEnumerator.cs" />
+    <Compile Include="_Codebase\HtmlGrammar.cs" />
+    <Compile Include="_Codebase\HtmlParser.cs" />
+    <Compile Include="_Codebase\HtmlDocument.cs" />
+    <Compile Include="_Codebase\HtmlTagInfo.cs" />
+    <Compile Include="_Codebase\HtmlTagNames.cs" />
+    <Compile Include="_Codebase\TagType.cs" />
+    <Compile Include="_Codebase\VoidAttribute.cs" />
+    <Compile Include="_Codebase\WhitespaceHandling.cs" />
+    <Compile Include="_Codebase\Selector.cs" />
+    <Compile Include="_Codebase\_Extensions\CharExtensions.cs" />
+    <Compile Include="_Codebase\HtmlElement.cs" />
+    <Compile Include="_Codebase\_Exceptions\HtmlException.cs" />
+    <Compile Include="_Codebase\_Exceptions\InvalidCharacterException.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="_Extensions\StringExtensions.cs" />
-    <Compile Include="_Exceptions\MissingClosingTagException.cs" />
+    <Compile Include="_Codebase\_Extensions\EnumExtensions.cs" />
+    <Compile Include="_Codebase\_Extensions\StringExtensions.cs" />
+    <Compile Include="_Codebase\_Exceptions\MissingClosingTagException.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="_TestHtml\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

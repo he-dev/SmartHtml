@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace SmartHtml
 {
-    public enum LeadingWhitespace
+    public enum WhitespaceHandling
     {
         Ignore,
-        Select,
+        Read,
     }
 }

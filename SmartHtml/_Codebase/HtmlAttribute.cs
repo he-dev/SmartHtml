@@ -8,10 +8,7 @@ namespace SmartHtml
 {
     public class HtmlAttribute
     {
-        public HtmlAttribute()
-        {
-            Value = string.Empty;
-        }
+        public HtmlElement ParentElement { get; internal set; }
 
         public string Name { get; set; }
 

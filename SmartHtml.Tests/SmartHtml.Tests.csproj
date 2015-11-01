@@ -50,9 +50,10 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
-    <Compile Include="HtmlParserTests.cs" />
+    <Compile Include="_Codebase\HtmlParserTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="StringExtensionsTests.cs" />
+    <Compile Include="_Codebase\StringExtensionsTests.cs" />
+    <Compile Include="_Codebase\TestHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SmartHtml\SmartHtml.csproj">
@@ -61,40 +62,41 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="_Test_Files\DoubbleOpeningAngleBracket.txt">
+    <Content Include="_TestHtml\DoubbleOpeningAngleBracket.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="_Test_Files\UnclosedElement.txt">
+    <Content Include="_TestHtml\UnclosedElement.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="_Test_Files\MultilineHtml1.txt">
+    <Content Include="_TestHtml\MultilineHtml1.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="_Test_Files\VoidElementBeforeOtherElement.txt">
+    <Content Include="_TestHtml\VoidElementBeforeOtherElement.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="_Test_Files\VoidElement.txt">
+    <Content Include="_TestHtml\VoidElement.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="_Test_Files\ElementWithAttributesAndSpaces.txt">
+    <Content Include="_TestHtml\ElementWithAttributesAndSpaces.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="_Test_Files\ElementWithAttributes.txt">
+    <Content Include="_TestHtml\ElementWithAttributes.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="_Test_Files\NestedElementsWithText.txt">
+    <Content Include="_TestHtml\NestedElementsWithText.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="_Test_Files\ElementWithText.txt">
+    <Content Include="_TestHtml\ElementWithText.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="_Test_Files\TwoElementsNextToEachOther.txt">
+    <Content Include="_TestHtml\TwoElementsNextToEachOther.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="_Test_Files\EmptyElement.txt">
+    <Content Include="_TestHtml\EmptyElement.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
+  <ItemGroup />
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">
       <ItemGroup>

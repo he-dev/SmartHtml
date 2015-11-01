@@ -6,8 +6,11 @@ using System.Threading.Tasks;
 
 namespace SmartHtml
 {
-    public class HtmlElementCollection : List<object>
+    public class Selector
     {
-
+        public static void Parse(string selector)
+        {
+            
+        }
     }
 }
